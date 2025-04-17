@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { WeatherData } from '../model/weatherModel';
+import axios from 'axios';
+import mockWeatherData from './mockData';
 
 interface WeatherState {
   weather: WeatherData | null;
   loading: boolean;
   error: string | null;
   fetchWeather: (lat: number, lon: number) => Promise<void>;
-
 }
 
 export const useWeatherStore = create<WeatherState>((set) => ({
@@ -15,27 +16,34 @@ export const useWeatherStore = create<WeatherState>((set) => ({
   error: null,
 
   fetchWeather: async (latitude, longitude) => {
-    set({ loading: false, error: null });
+    console.log('Fetching weather data...');
+    set({ loading: true, error: null });
 
     try {
-      const response = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m`
-      );
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m`;
+      console.log(`URL: ${url}`);
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch weather data');
+      const response = await axios.get(url);
+
+      const data: WeatherData = response.data;
+
+      // Check if current_weather exists in response
+      if (!data.current_weather) {
+        console.warn('No current_weather data in response, using mockWeatherData');
+        set({ weather: mockWeatherData, loading: false });
+        return;
       }
-      console.log(response);
-      const data: WeatherData = await response.json();
-      
-    //   console.log('API response:', JSON.stringify(data, null, 2));
-      console.log('Weather data:', data);
-//       console.log('Temperature:', data.current.temperature);
-// console.log('Units:', data.current_weather_units?.temperature);
+
+      console.log('API response:', JSON.stringify(data, null, 2));
 
       set({ weather: data, loading: false });
     } catch (error: any) {
-      set({ error: error.message || 'An error occurred', loading: false });
+      console.error('Axios error, using mock data:', error.message);
+      set({
+        weather: mockWeatherData,
+        error: 'Using mock data due to error: ' + (error.message || 'Unknown error'),
+        loading: false,
+      });
     }
   },
 }));
