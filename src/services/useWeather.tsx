@@ -15,7 +15,7 @@ export const useWeatherStore = create<WeatherState>((set) => ({
   error: null,
 
   fetchWeather: async (latitude, longitude) => {
-    set({ loading: true, error: null });
+    set({ loading: false, error: null });
 
     try {
       const response = await fetch(
@@ -25,8 +25,14 @@ export const useWeatherStore = create<WeatherState>((set) => ({
       if (!response.ok) {
         throw new Error('Failed to fetch weather data');
       }
-
+      console.log(response);
       const data: WeatherData = await response.json();
+      
+    //   console.log('API response:', JSON.stringify(data, null, 2));
+      console.log('Weather data:', data);
+//       console.log('Temperature:', data.current.temperature);
+// console.log('Units:', data.current_weather_units?.temperature);
+
       set({ weather: data, loading: false });
     } catch (error: any) {
       set({ error: error.message || 'An error occurred', loading: false });
